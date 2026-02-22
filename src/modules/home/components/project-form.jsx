@@ -9,10 +9,12 @@ import { useRouter } from 'next/navigation';
 import { toast } from "sonner";
 import { useState } from 'react';
 import z from "zod";
+import { Spinner } from '@/components/ui/spinner';
 
 import { cn } from "@/lib/utils";
 import { Button } from '@/components/ui/button';
 import { Form, FormField } from "@/components/ui/form";
+import { useCreateProject } from '@/modules/projects/hooks/project';
 
 const formSchema = z.object({
     content: z.string().min(1, "Project description required").max(1000, "Description is too long!!")
@@ -69,28 +71,36 @@ const PROJECT_TEMPLATES = [
     },
 ];
 
-const ProjectForm = () => {
-    const [isFocused, setIsFocused] = useState(false);
-    const router = useRouter();
+const ProjectsForm = () => {
+  const [isFocused, setIsFocused] = useState(false);
+  const router = useRouter();
+  const {mutateAsync , isPending} = useCreateProject()
 
-    const form = useForm({
-        resolver: zodResolver(formSchema),
-        defaultValues: {
-            content: ""
-        }
-    })
+  const form = useForm({
+    resolver: zodResolver(formSchema),
+    defaultValues: {
+      content: "",
+    },
+    mode:"onChange"
+  });
 
-    const handleTemplate = (prompt) => {
-        form.setValue("content", prompt);
+  const handleTemplate = (prompt) => {
+    form.setValue("content", prompt);
+  };
+
+  const onSubmit = async (values) => {
+    try {
+      const res = await mutateAsync(values.content)
+      router.push(`/projects/${res.id}`)
+      toast.success("Project created successfully")
+      form.reset()
+    } catch (error) {
+       toast.error(error.message || "Failed to create project");
     }
+  };
 
-    const onSubmit = async (values) => {
-        try {
-            console.log(values);
-        } catch (error) {
 
-        }
-    }
+  const isButtonDisabled = isPending || !form.watch("content").trim()
 
     return (
         <div className='space-y-8'>
@@ -171,9 +181,9 @@ const ProjectForm = () => {
                             </kbd>
                             &nbsp; to submit
                         </div>
-                        <Button className={cn("size-8 rounded-full")}
-                        type="submit">
-                            <ArrowUpIcon className='size-4' />
+                        <Button className={cn("size-8 rounded-full", isButtonDisabled && "bg-muted-foreground border")}
+                        type="submit" >
+                        {isPending ? (<Spinner />) : (<ArrowUpIcon className='size-4' />)}
                         </Button>
                     </div>
                 </form>
@@ -182,4 +192,4 @@ const ProjectForm = () => {
     )
 }
 
-export default ProjectForm
+export default ProjectsForm
