@@ -1,21 +1,41 @@
-# You can use most Debian-based base images
-FROM node:21-slim
+# Use stable Node version
+FROM node:20-slim
 
-# Install curl
-RUN apt-get update && apt-get install -y curl && apt-get clean && rm -rf /var/lib/apt/lists/*
+# Install system dependencies
+RUN apt-get update && \
+    apt-get install -y curl git && \
+    apt-get clean && \
+    rm -rf /var/lib/apt/lists/*
 
+# Set working directory
+WORKDIR /home/user
+
+# Copy compile script
 COPY compile_page.sh /compile_page.sh
 RUN chmod +x /compile_page.sh
 
-# Install dependencies and customize sandbox
-WORKDIR /home/user/nextjs-app
+# Create Next.js app
+RUN npx --yes create-next-app@16.1.6 . \
+    --yes \
+    --ts \
+    --tailwind \
+    --eslint \
+    --app \
+    --src-dir \
+    --import-alias "@/*"
 
-RUN npx --yes create-next-app@16.1.6 . --yes
-
+# Initialize shadcn
 RUN npx --yes shadcn@2.6.3 init --yes -b neutral --force
 RUN npx --yes shadcn@2.6.3 add --all --yes
 
-# Move the Nextjs app to the home directory and remove the nextjs-app directory
-RUN mv /home/user/nextjs-app/* /home/user/ && rm -rf /home/user/nextjs-app
+# Install dependencies
+RUN npm install
 
-# These commands are nothing but installing the nextjs application inside the Sandbox i.e. docker application.
+# FIX: Install missing animation dependency
+RUN npm install tw-animate-css
+
+# Expose Next.js port
+EXPOSE 3000
+
+# Start dev server
+CMD ["npm", "run", "dev"]
