@@ -6,6 +6,7 @@ import { format } from 'date-fns'
 import { cn } from '@/lib/utils'
 import Image from 'next/image'
 import { ChevronRightIcon, Code2Icon } from 'lucide-react'
+import Response from '@/components/ai-elements/response'
 
 const FragmentCard = ({ fragment, isActiveFragment, onFragmentClick }) => {
   return (
@@ -74,7 +75,7 @@ const AssistantMessage = ({
 
       <div className="pl-8.5 flex flex-col gap-y-4">
        <div className="prose prose-sm dark:prose-invert max-w-none">
-         {content}
+         <Response>{content}</Response>
        </div>
         {fragment && type === MessageType.RESULT && (
           <FragmentCard
