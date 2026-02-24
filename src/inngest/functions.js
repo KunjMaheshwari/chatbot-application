@@ -19,8 +19,15 @@ export const codeAgentFunction = inngest.createFunction(
 
   async ({ event, step }) => {
 
-    const sandboxId = await step.run("get-sandbox-id", async () => {
+    const sandboxId = await step.run("create-sandbox", async () => {
       const sandbox = await Sandbox.create("kunjmaheshwari2021/logick-v2");
+
+      // Install dependencies
+      await sandbox.commands.run("npm install");
+
+      // Start dev server in background
+      await sandbox.commands.run("npm run dev &");
+
       return sandbox.sandboxId;
     });
 
@@ -181,6 +188,19 @@ export const codeAgentFunction = inngest.createFunction(
     });
 
     const result = await network.run(event.data.value, { state });
+
+    await step.run("wait-for-server", async () => {
+      const sandbox = await Sandbox.connect(sandboxId);
+
+      for (let i = 0; i < 20; i++) {
+        try {
+          await sandbox.commands.run("curl -s http://localhost:3000");
+          break;
+        } catch {
+          await new Promise((r) => setTimeout(r, 2000));
+        }
+      }
+    });
 
 
     const fragmentTitleGenerator = createAgent({
